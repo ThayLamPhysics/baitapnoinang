@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài giảng: Nội Năng - Thầy Lâm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #f0fdf4; /* green-50 */
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #22c55e, #16a34a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+        }
+        .pill-button {
+            background-image: linear-gradient(to right, #4ade80, #22c55e);
+            transition: all 0.3s ease;
+        }
+        .pill-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px -5px rgba(34, 197, 94, 0.4);
+        }
+        .tab-button.active {
+            border-color: #22c55e;
+            background-color: #dcfce7;
+            color: #166534;
+            font-weight: 500;
+        }
+        .quiz-card {
+            perspective: 1000px;
+        }
+        .quiz-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .quiz-card.flipped .quiz-card-inner {
+            transform: rotateY(180deg);
+        }
+        .quiz-card-front, .quiz-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.75rem;
+        }
+        .quiz-card-back {
+            transform: rotateY(180deg);
+        }
+        .option-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        .option-btn.selected {
+            border-width: 2px;
+            border-color: #facc15; /* yellow-400 */
+        }
+        .option-btn.correct {
+            background-color: #dcfce7; /* green-100 */
+            border-color: #22c55e; /* green-500 */
+        }
+        .option-btn.incorrect {
+            background-color: #fee2e2; /* red-100 */
+            border-color: #ef4444; /* red-500 */
+        }
+        .flagged-icon {
+            color: #f59e0b; /* amber-500 */
+        }
+        /* Spinner animation */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #22c55e;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Cover Page -->
+    <div id="cover-page" class="fixed inset-0 bg-cover bg-center z-50 flex flex-col items-center justify-center p-4" style="background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('https://www.transparenttextures.com/patterns/light-paper-fibers.png');">
+        <!-- Ad Banner -->
+        <div id="ad-banner" class="absolute top-4 right-4 bg-white p-2 rounded-lg shadow-lg max-w-xs w-full flex items-start space-x-2">
+            <img src="https://i.imgur.com/8ZghNiR.png" alt="Quảng cáo" class="w-20 h-20 object-cover rounded">
+            <div class="flex-1">
+                <p class="text-sm font-semibold">Khóa học Lý Thầy Lâm</p>
+                <p class="text-xs text-gray-600">Khai giảng khóa học chuyên sâu, bứt phá điểm số!</p>
+            </div>
+            <button id="close-ad-btn" class="text-gray-400 hover:text-gray-800">&times;</button>
+        </div>
+
+        <div class="text-center">
+            <h1 class="text-4xl md:text-6xl font-bold gradient-text">Chủ đề: Nội Năng</h1>
+            <p class="mt-4 text-lg md:text-xl text-gray-600">Với Thầy Lâm</p>
+            <p class="mt-2 text-md text-gray-500 italic max-w-2xl mx-auto">"Học Vật Lý không chỉ là nhớ công thức, mà là hiểu câu chuyện của vũ trụ."</p>
+            <button id="start-learning-btn" class="mt-8 px-8 py-4 rounded-full text-white font-bold text-lg pill-button">
+                Bắt đầu học
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="hidden">
+        <header class="bg-white shadow-md sticky top-0 z-40">
+            <div class="container mx-auto px-4 py-2">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-xl font-bold gradient-text">Vật Lý 12: Nội Năng</h1>
+                    <div id="tabs" class="hidden md:flex border-b border-gray-200 space-x-4">
+                        <button data-tab="tab-intro" class="tab-button px-4 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">Giới thiệu</button>
+                        <button data-tab="tab-1" class="tab-button px-4 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">Nội năng là gì?</button>
+                        <button data-tab="tab-2" class="tab-button px-4 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">Định luật I</button>
+                        <button data-tab="tab-3" class="tab-button px-4 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">Thay đổi nội năng</button>
+                        <button data-tab="tab-quiz" class="tab-button px-4 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">Kiểm tra</button>
+                    </div>
+                </div>
+                 <!-- Mobile Tabs -->
+                <div class="md:hidden mt-2">
+                    <select id="mobile-tabs" class="w-full p-2 border rounded-md bg-gray-50">
+                        <option value="tab-intro">Giới thiệu</option>
+                        <option value="tab-1">Nội năng là gì?</option>
+                        <option value="tab-2">Định luật I</option>
+                        <option value="tab-3">Thay đổi nội năng</option>
+                        <option value="tab-quiz">Kiểm tra</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto p-4 md:p-8">
+            <div id="tab-content">
+                <!-- Tab Intro -->
+                <div id="tab-intro-content" class="tab-panel">
+                    <h2 class="text-3xl font-bold text-green-700 mb-4">Lời ngỏ từ Thầy Lâm</h2>
+                    <div class="bg-white p-6 rounded-xl shadow-lg space-y-4 text-lg leading-relaxed">
+                        <p>Các em học sinh thân mến,</p>
+                        <p>Ngày xửa ngày xưa, trong một vương quốc nọ, có một vị vua vô cùng giàu có. Kho báu của ông không chỉ là vàng bạc châu báu thấy được, mà còn là một nguồn năng lượng vô hình, tiềm ẩn bên trong mỗi vật thể trong vương quốc. Vị vua gọi đó là "Nội Năng". Ông biết rằng, nếu hiểu và biết cách thay đổi "kho báu" này, ông có thể làm được những điều kỳ diệu.</p>
+                        <p>Bài học của chúng ta hôm nay cũng giống như một chuyến phiêu lưu vào vương quốc đó. Chúng ta sẽ cùng nhau khám phá xem "Nội Năng" thực sự là gì, làm thế nào để "kho báu" ấy tăng lên hay giảm đi, và những quy luật nào chi phối nó. Đừng lo lắng về những công thức khô khan, hãy xem chúng như những tấm bản đồ dẫn đường. Thầy tin rằng, sau chuyến đi này, các em sẽ nhìn thế giới xung quanh bằng một con mắt khác, một con mắt thấu hiểu những chuyển động năng lượng vi mô đầy thú vị.</p>
+                        <p>Nào, chúng ta cùng bắt đầu hành trình nhé!</p>
+                    </div>
+                </div>
+
+                <!-- Tab 1 -->
+                <div id="tab-1-content" class="tab-panel hidden">
+                    <h2 class="text-3xl font-bold text-green-700 mb-4">Nội năng là gì?</h2>
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div class="bg-white p-6 rounded-xl shadow-lg space-y-3">
+                            <h3 class="font-semibold text-xl text-yellow-600">Tóm tắt kiến thức</h3>
+                            <p>Trong nhiệt động lực học, nội năng của một vật là tổng động năng và thế năng của các phân tử cấu tạo nên vật.</p>
+                            <ul class="list-disc list-inside space-y-2">
+                                <li><b>Động năng:</b> Năng lượng do các phân tử chuyển động không ngừng.</li>
+                                <li><b>Thế năng:</b> Năng lượng do sự tương tác giữa các phân tử.</li>
+                            </ul>
+                            <p>Nội năng của một lượng khí lí tưởng chỉ phụ thuộc vào nhiệt độ.</p>
+                            <div class="bg-green-50 p-4 rounded-lg mt-4">
+                                <p class="font-mono text-center text-lg">U = f(T, V)</p>
+                                <p class="text-sm text-center text-gray-600">Với khí lý tưởng: U = f(T)</p>
+                            </div>
+                            <h4 class="font-semibold mt-2">Ví dụ:</h4>
+                            <p class="text-sm italic">Khi đun một ấm nước, các phân tử nước chuyển động nhanh hơn, động năng của chúng tăng, do đó nội năng của khối nước tăng.</p>
+                        </div>
+                        <div class="p-4 flex justify-center items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-full max-w-sm">
+                                <rect width="200" height="200" fill="#fefce8"/>
+                                <circle cx="100" cy="100" r="70" fill="none" stroke="#fbbf24" stroke-width="2"/>
+                                <g id="particles">
+                                    <circle cx="100" cy="60" r="5" fill="#16a34a"/>
+                                    <circle cx="135" cy="75" r="5" fill="#16a34a"/>
+                                    <circle cx="145" cy="110" r="5" fill="#16a34a"/>
+                                    <circle cx="120" cy="140" r="5" fill="#16a34a"/>
+                                    <circle cx="80" cy="145" r="5" fill="#16a34a"/>
+                                    <circle cx="55" cy="120" r="5" fill="#16a34a"/>
+                                    <circle cx="65" cy="80" r="5" fill="#16a34a"/>
+                                </g>
+                                <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="5s" repeatCount="indefinite"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2 -->
+                <div id="tab-2-content" class="tab-panel hidden">
+                    <h2 class="text-3xl font-bold text-green-700 mb-4">Định luật I Nhiệt động lực học</h2>
+                    <div class="grid md:grid-cols-2 gap-8 items-center">
+                        <div class="bg-white p-6 rounded-xl shadow-lg space-y-3">
+                            <h3 class="font-semibold text-xl text-yellow-600">Tóm tắt kiến thức</h3>
+                            <p>Định luật I của nhiệt động lực học thực chất là sự bảo toàn năng lượng, áp dụng cho các hiện tượng nhiệt.</p>
+                            <p><b>Phát biểu:</b> Độ biến thiên nội năng của một hệ bằng tổng công và nhiệt lượng mà hệ nhận được.</p>
+                            <div class="bg-green-50 p-4 rounded-lg mt-4">
+                                <p class="font-mono text-center text-lg">ΔU = A + Q</p>
+                            </div>
+                            <h4 class="font-semibold mt-2">Quy ước về dấu:</h4>
+                            <ul class="list-disc list-inside space-y-2">
+                                <li><b>Q > 0:</b> Hệ nhận nhiệt lượng.</li>
+                                <li><b>Q < 0:</b> Hệ truyền nhiệt lượng.</li>
+                                <li><b>A > 0:</b> Hệ nhận công.</li>
+                                <li><b>A < 0:</b> Hệ thực hiện công.</li>
+                            </ul>
+                             <h4 class="font-semibold mt-2">Ví dụ:</h4>
+                            <p class="text-sm italic">Một khối khí trong xi-lanh nhận một nhiệt lượng 100J và thực hiện một công 70J. Độ biến thiên nội năng của nó là ΔU = Q + A = 100 + (-70) = 30J.</p>
+                        </div>
+                        <div class="p-4 flex justify-center items-center">
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-full max-w-sm">
+                                <rect width="200" height="200" fill="#fefce8"/>
+                                <!-- Cylinder -->
+                                <rect x="50" y="50" width="100" height="120" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+                                <rect x="45" y="50" width="110" height="10" fill="#cbd5e1" rx="5"/>
+                                <!-- Piston -->
+                                <rect id="piston" x="60" y="60" width="80" height="20" fill="#94a3b8" stroke="#475569" stroke-width="2"/>
+                                <rect x="95" y="30" width="10" height="30" fill="#94a3b8"/>
+                                <!-- Heat Arrow -->
+                                <path d="M 20 150 Q 40 130 60 150" stroke="#ef4444" stroke-width="3" fill="none"/>
+                                <path d="M 55 145 L 60 150 L 65 145" stroke="#ef4444" stroke-width="3" fill="none"/>
+                                <text x="15" y="130" font-size="16" fill="#ef4444">Q</text>
+                                <!-- Work Arrow -->
+                                <path d="M 100 30 L 100 10" stroke="#3b82f6" stroke-width="3" fill="none"/>
+                                <path d="M 95 15 L 100 10 L 105 15" stroke="#3b82f6" stroke-width="3" fill="none"/>
+                                <text x="110" y="25" font-size="16" fill="#3b82f6">A</text>
+                                <animateTransform attributeName="transform" attributeType="XML" type="translate" from="0 0" to="0 -10" dur="2s" begin="0s;anim2.end" end="anim1.end" id="anim1"/>
+                                <animateTransform attributeName="transform" attributeType="XML" type="translate" from="0 -10" to="0 0" dur="2s" begin="anim1.end" end="anim2.end" id="anim2"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3 -->
+                <div id="tab-3-content" class="tab-panel hidden">
+                    <h2 class="text-3xl font-bold text-green-700 mb-4">Các cách làm thay đổi nội năng</h2>
+                    <div class="bg-white p-6 rounded-xl shadow-lg space-y-4">
+                        <p>Dựa vào định luật I, có hai cách để làm thay đổi nội năng của một vật: <b>thực hiện công</b> và <b>truyền nhiệt</b>.</p>
+                        <div class="grid md:grid-cols-2 gap-6 mt-4">
+                            <!-- Thực hiện công -->
+                            <div class="border border-yellow-300 bg-yellow-50 p-4 rounded-lg">
+                                <h3 class="font-semibold text-xl text-yellow-600 mb-2">1. Thực hiện công</h3>
+                                <p>Khi tác dụng lực lên vật làm vật biến dạng hoặc di chuyển, ta đã thực hiện công lên vật, làm nội năng của vật tăng.</p>
+                                <div class="p-4 flex justify-center items-center h-48">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" class="w-full h-full">
+                                        <path d="M20,80 L40,20 L60,80" fill="none" stroke="#f59e0b" stroke-width="4"/>
+                                        <path d="M70,80 L90,20 L110,80" fill="none" stroke="#f59e0b" stroke-width="4"/>
+                                        <path d="M120,80 L140,20 L160,80" fill="none" stroke="#f59e0b" stroke-width="4"/>
+                                        <text x="10" y="95" font-size="12">Ví dụ: Cọ xát hai tay vào nhau.</text>
+                                    </svg>
+                                </div>
+                            </div>
+                            <!-- Truyền nhiệt -->
+                            <div class="border border-green-300 bg-green-50 p-4 rounded-lg">
+                                <h3 class="font-semibold text-xl text-green-700 mb-2">2. Truyền nhiệt</h3>
+                                <p>Quá trình truyền nhiệt là sự chuyển đổi nội năng giữa các vật mà không có sự thực hiện công.</p>
+                                <div class="p-4 flex justify-center items-center h-48">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" class="w-full h-full">
+                                        <rect x="50" y="30" width="100" height="50" fill="#dcfce7" stroke="#16a34a" />
+                                        <path d="M60,20 Q100,0,140,20" stroke="#ef4444" stroke-width="2" fill="none" stroke-dasharray="4 4">
+                                            <animate attributeName="stroke-dashoffset" from="0" to="8" dur="0.5s" repeatCount="indefinite"/>
+                                        </path>
+                                        <path d="M70,25 Q100,5,130,25" stroke="#ef4444" stroke-width="2" fill="none" stroke-dasharray="4 4">
+                                            <animate attributeName="stroke-dashoffset" from="4" to="12" dur="0.5s" repeatCount="indefinite"/>
+                                        </path>
+                                        <text x="30" y="95" font-size="12">Ví dụ: Thả một miếng kim loại nóng vào nước.</text>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-center">
+                            <button id="open-simulation-btn" class="px-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all">
+                                Mở Mô phỏng P-V
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Quiz -->
+                <div id="tab-quiz-content" class="tab-panel hidden">
+                    <!-- Name Input Screen -->
+                    <div id="name-input-screen" class="text-center max-w-lg mx-auto">
+                        <h2 class="text-3xl font-bold text-green-700 mb-4">Bài Kiểm Tra 15 Phút</h2>
+                        <p class="text-gray-600 mb-6">Hãy nhập tên của em để bắt đầu. Kết quả sẽ được ghi nhận với tên này nhé!</p>
+                        <div class="bg-white p-8 rounded-xl shadow-lg">
+                            <input type="text" id="student-name" placeholder="Ví dụ: Nguyễn Văn An" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+                            <button id="start-quiz-btn" class="mt-6 w-full px-8 py-3 rounded-lg text-white font-bold bg-yellow-500 hover:bg-yellow-600 shadow-md hover:shadow-lg transition-all">
+                                Bắt đầu làm bài
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Screen -->
+                    <div id="quiz-screen" class="hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold text-green-700">Câu hỏi <span id="question-number">1</span>/10</h2>
+                            <div id="flagged-questions-list" class="flex items-center gap-2 text-sm">
+                                <span>Đã đánh dấu:</span>
+                            </div>
+                        </div>
+                        <div id="quiz-container" class="space-y-6">
+                            <!-- Questions will be injected here by JS -->
+                        </div>
+                        <div class="mt-8 flex justify-between items-center">
+                            <button id="prev-question-btn" class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Câu trước</button>
+                            <button id="submit-quiz-btn" class="px-8 py-3 rounded-lg text-white font-bold bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all">Nộp bài</button>
+                            <button id="next-question-btn" class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Câu tiếp</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Results Screen -->
+                    <div id="results-screen" class="hidden text-center max-w-3xl mx-auto">
+                         <h2 class="text-3xl font-bold text-green-700 mb-2">Kết quả của <span id="result-student-name" class="text-yellow-500"></span></h2>
+                         <div class="bg-white p-8 rounded-xl shadow-lg">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-6">
+                                <div>
+                                    <p class="text-sm text-gray-500">Điểm số</p>
+                                    <p id="score-text" class="text-4xl font-bold text-green-600">8/10</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Tỷ lệ đúng</p>
+                                    <p id="percentage-text" class="text-4xl font-bold text-green-600">80%</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <p class="text-sm text-gray-500">Lời nhận xét từ Thầy Lâm</p>
+                                    <p id="final-comment" class="text-lg font-medium text-yellow-600 italic">"Làm tốt lắm! Em đã nắm vững kiến thức rồi đấy!"</p>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-6">
+
+                            <div id="ai-analysis-container" class="text-left">
+                                <h3 class="text-xl font-bold text-center text-green-700 mb-4">Phân Tích Chi Tiết từ AI</h3>
+                                <div id="ai-loading" class="flex flex-col items-center justify-center p-6">
+                                    <div class="loader"></div>
+                                    <p class="mt-4 text-gray-600">AI đang phân tích bài làm của em, chờ một chút nhé...</p>
+                                </div>
+                                <div id="ai-result" class="hidden space-y-4 bg-gray-50 p-4 rounded-lg">
+                                    <!-- AI analysis will be injected here -->
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Simulation Modal -->
+    <div id="simulation-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-full max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="font-bold text-lg text-green-700">Mô phỏng Giản đồ P-V</h3>
+                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <div class="flex-grow p-1">
+                <iframe id="simulation-iframe" class="w-full h-full border-0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONFIGURATION ---
+        // API key is handled by the environment for gemini-2.0-flash
+        const apiKey = ""; 
+        const googleScriptURL = 'https://script.google.com/macros/s/AKfycbx8ALfDVf1xedGX9Dv7HSMegojLGrlqqGbpoyk0QxKdilunSrFcySTci5q1M_b8ynRn/exec';
+
+        const questions = [
+            {
+                question: "Nội năng của một vật là gì?",
+                options: [
+                    "Tổng động năng của các phân tử cấu tạo nên vật.",
+                    "Tổng thế năng tương tác giữa các phân tử cấu tạo nên vật.",
+                    "Tổng động năng và thế năng của các phân tử cấu tạo nên vật.",
+                    "Nhiệt lượng mà vật nhận được."
+                ],
+                answer: 2
+            },
+            {
+                question: "Đối với khí lí tưởng, nội năng chỉ phụ thuộc vào yếu tố nào?",
+                options: ["Áp suất", "Thể tích", "Nhiệt độ", "Số mol"],
+                answer: 2
+            },
+            {
+                question: "Hệ thức nào sau đây diễn tả đúng định luật I của nhiệt động lực học?",
+                options: ["ΔU = A + Q", "ΔU = A - Q", "ΔU = Q - A", "A = Q + ΔU"],
+                answer: 0
+            },
+            {
+                question: "Theo quy ước, khi một hệ nhận nhiệt lượng thì:",
+                options: ["Q > 0", "Q < 0", "A > 0", "A < 0"],
+                answer: 0
+            },
+            {
+                question: "Hành động nào sau đây làm thay đổi nội năng của vật bằng cách thực hiện công?",
+                options: ["Phơi một vật ngoài nắng.", "Bỏ một viên đá vào cốc nước.", "Nén khí trong một xi-lanh.", "Đặt một ấm nước lên bếp lửa."],
+                answer: 2
+            },
+            {
+                question: "Người ta cung cấp cho khí trong một xi-lanh một nhiệt lượng 150 J. Khí nở ra thực hiện một công 100 J. Độ biến thiên nội năng của khí là bao nhiêu?",
+                options: ["250 J", "50 J", "-50 J", "150 J"],
+                answer: 1, // ΔU = Q + A = 150 + (-100) = 50 J
+            },
+            {
+                question: "Một động cơ nhiệt nhận nhiệt lượng 2.5 x 10<sup>4</sup> J và thực hiện công 8 x 10<sup>3</sup> J. Độ biến thiên nội năng của động cơ trong một chu trình là bao nhiêu?",
+                options: ["0 J", "1.7 x 10<sup>4</sup> J", "3.3 x 10<sup>4</sup> J", "-1.7 x 10<sup>4</sup> J"],
+                answer: 0, // Trong một chu trình, ΔU = 0
+            },
+            {
+                question: "Nén một khối khí, người ta thực hiện một công là 200 J. Biết nội năng của khí tăng thêm 120 J. Nhiệt lượng trao đổi trong quá trình này là bao nhiêu?",
+                options: ["Khí nhận 80 J", "Khí truyền đi 80 J", "Khí nhận 320 J", "Khí truyền đi 320 J"],
+                answer: 1, // ΔU = A + Q => 120 = 200 + Q => Q = -80 J (truyền nhiệt)
+            },
+            {
+                question: "Trong quá trình đẳng tích, một khối khí nhận nhiệt lượng 500 J. Độ biến thiên nội năng của khí là:",
+                options: ["0 J", "500 J", "-500 J", "Không xác định được"],
+                answer: 1, // Đẳng tích => A = 0 => ΔU = Q = 500 J
+            },
+            {
+                question: "Một người có khối lượng 60 kg trượt từ đỉnh cầu trượt cao 5 m xuống đất. Vận tốc khi chạm đất là 8 m/s. Lấy g = 10 m/s<sup>2</sup>. Công của lực ma sát đã làm thay đổi nội năng của người và cầu trượt một lượng bằng bao nhiêu?",
+                options: ["-1080 J", "1080 J", "3000 J", "1920 J"],
+                answer: 1, // Cơ năng ban đầu: W1 = mgh = 60*10*5 = 3000 J. Cơ năng lúc sau: W2 = 0.5*m*v^2 = 0.5*60*8^2 = 1920 J. Độ biến thiên cơ năng = công lực ma sát = W2 - W1 = -1080 J. Phần cơ năng mất đi chuyển thành nhiệt, làm tăng nội năng. Lượng nội năng tăng = 1080 J.
+            }
+        ];
+
+        // --- STATE VARIABLES ---
+        let studentName = '';
+        let userAnswers = new Array(questions.length).fill(null);
+        let flaggedQuestions = new Set();
+        let currentQuestionIndex = 0;
+
+        // --- DOM ELEMENTS ---
+        const coverPage = document.getElementById('cover-page');
+        const mainContent = document.getElementById('main-content');
+        const startLearningBtn = document.getElementById('start-learning-btn');
+        const adBanner = document.getElementById('ad-banner');
+        const closeAdBtn = document.getElementById('close-ad-btn');
+        
+        const tabs = document.getElementById('tabs');
+        const mobileTabs = document.getElementById('mobile-tabs');
+        const tabContent = document.getElementById('tab-content');
+        const tabPanels = tabContent.querySelectorAll('.tab-panel');
+
+        const nameInputScreen = document.getElementById('name-input-screen');
+        const studentNameInput = document.getElementById('student-name');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        
+        const quizScreen = document.getElementById('quiz-screen');
+        const quizContainer = document.getElementById('quiz-container');
+        const questionNumberEl = document.getElementById('question-number');
+        const prevQuestionBtn = document.getElementById('prev-question-btn');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const submitQuizBtn = document.getElementById('submit-quiz-btn');
+        const flaggedQuestionsList = document.getElementById('flagged-questions-list');
+
+        const resultsScreen = document.getElementById('results-screen');
+        const resultStudentName = document.getElementById('result-student-name');
+        const scoreText = document.getElementById('score-text');
+        const percentageText = document.getElementById('percentage-text');
+        const finalComment = document.getElementById('final-comment');
+        
+        const aiAnalysisContainer = document.getElementById('ai-analysis-container');
+        const aiLoading = document.getElementById('ai-loading');
+        const aiResult = document.getElementById('ai-result');
+
+        const openSimulationBtn = document.getElementById('open-simulation-btn');
+        const simulationModal = document.getElementById('simulation-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const simulationIframe = document.getElementById('simulation-iframe');
+
+        // --- FUNCTIONS ---
+
+        // Initial Setup
+        const init = () => {
+            setupEventListeners();
+            setActiveTab('tab-intro');
+            renderQuiz();
+            showQuestion(0);
+        };
+
+        const setupEventListeners = () => {
+            startLearningBtn.addEventListener('click', () => {
+                coverPage.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+            });
+
+            closeAdBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                adBanner.style.display = 'none';
+            });
+
+            tabs.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const tabId = e.target.getAttribute('data-tab');
+                    setActiveTab(tabId);
+                }
+            });
+            
+            mobileTabs.addEventListener('change', (e) => {
+                setActiveTab(e.target.value);
+            });
+
+            startQuizBtn.addEventListener('click', handleStartQuiz);
+            
+            prevQuestionBtn.addEventListener('click', () => showQuestion(currentQuestionIndex - 1));
+            nextQuestionBtn.addEventListener('click', () => showQuestion(currentQuestionIndex + 1));
+            submitQuizBtn.addEventListener('click', handleSubmitQuiz);
+            
+            openSimulationBtn.addEventListener('click', openSimulation);
+            closeModalBtn.addEventListener('click', closeSimulation);
+            simulationModal.addEventListener('click', (e) => {
+                if(e.target === simulationModal) closeSimulation();
+            });
+        };
+
+        // Tab Management
+        const setActiveTab = (tabId) => {
+            // Update desktop tabs
+            tabs.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+            });
+            
+            // Update mobile select
+            mobileTabs.value = tabId;
+
+            // Update content panels
+            tabPanels.forEach(panel => {
+                panel.classList.toggle('hidden', panel.id !== `${tabId}-content`);
+            });
+        };
+        
+        // Simulation Modal
+        const openSimulation = () => {
+            simulationIframe.src = 'https://javalab.org/en/pressure_volume_diagram_en/';
+            simulationModal.classList.remove('hidden');
+        };
+
+        const closeSimulation = () => {
+            simulationIframe.src = '';
+            simulationModal.classList.add('hidden');
+        };
+
+        // Quiz Logic
+        const handleStartQuiz = () => {
+            const name = studentNameInput.value.trim();
+            if (name) {
+                studentName = name;
+                nameInputScreen.classList.add('hidden');
+                quizScreen.classList.remove('hidden');
+            } else {
+                alert('Vui lòng nhập tên của em!');
+            }
+        };
+
+        const renderQuiz = () => {
+            quizContainer.innerHTML = '';
+            questions.forEach((q, index) => {
+                const questionEl = document.createElement('div');
+                questionEl.id = `question-${index}`;
+                questionEl.className = 'bg-white p-6 rounded-xl shadow-lg hidden';
+                questionEl.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <p class="text-lg font-medium mb-4">${index + 1}. ${q.question}</p>
+                        <button class="flag-btn p-2 rounded-full hover:bg-yellow-100" data-index="${index}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-2l9-9 4 4-9 9H3zm12.3-11.7l-4-4 1.4-1.4c.4-.4 1-.4 1.4 0l1.2 1.2c.4.4.4 1 0 1.4l-1.4 1.4z" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${q.options.map((opt, i) => `
+                            <button class="option-btn w-full text-left p-4 bg-gray-50 border border-gray-200 rounded-lg transition-all duration-200" data-q-index="${index}" data-o-index="${i}">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                quizContainer.appendChild(questionEl);
+            });
+
+            // Add event listeners for new elements
+            quizContainer.querySelectorAll('.option-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const qIndex = parseInt(btn.dataset.qIndex);
+                    const oIndex = parseInt(btn.dataset.oIndex);
+                    selectAnswer(qIndex, oIndex);
+                });
+            });
+            quizContainer.querySelectorAll('.flag-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const qIndex = parseInt(btn.dataset.index);
+                    toggleFlag(qIndex);
+                });
+            });
+        };
+
+        const showQuestion = (index) => {
+            if (index < 0 || index >= questions.length) return;
+            
+            document.getElementById(`question-${currentQuestionIndex}`).classList.add('hidden');
+            document.getElementById(`question-${index}`).classList.remove('hidden');
+            
+            currentQuestionIndex = index;
+            questionNumberEl.textContent = index + 1;
+
+            prevQuestionBtn.disabled = index === 0;
+            nextQuestionBtn.disabled = index === questions.length - 1;
+            prevQuestionBtn.classList.toggle('opacity-50', index === 0);
+            nextQuestionBtn.classList.toggle('opacity-50', index === questions.length - 1);
+        };
+        
+        const selectAnswer = (qIndex, oIndex) => {
+            userAnswers[qIndex] = oIndex;
+            const optionButtons = document.querySelectorAll(`#question-${qIndex} .option-btn`);
+            optionButtons.forEach((btn, i) => {
+                btn.classList.toggle('selected', i === oIndex);
+            });
+        };
+
+        const toggleFlag = (qIndex) => {
+            const btn = document.querySelector(`.flag-btn[data-index="${qIndex}"]`);
+            const icon = btn.querySelector('svg');
+            if (flaggedQuestions.has(qIndex)) {
+                flaggedQuestions.delete(qIndex);
+                icon.classList.remove('flagged-icon');
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-2l9-9 4 4-9 9H3zm12.3-11.7l-4-4 1.4-1.4c.4-.4 1-.4 1.4 0l1.2 1.2c.4.4.4 1 0 1.4l-1.4 1.4z" />`;
+            } else {
+                flaggedQuestions.add(qIndex);
+                icon.classList.add('flagged-icon');
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-2l9-9 4 4-9 9H3zm12.3-11.7l-4-4 1.4-1.4c.4-.4 1-.4 1.4 0l1.2 1.2c.4.4.4 1 0 1.4l-1.4 1.4z" fill="currentColor"/>`;
+            }
+            updateFlaggedList();
+        };
+
+        const updateFlaggedList = () => {
+            flaggedQuestionsList.innerHTML = '<span>Đã đánh dấu:</span>';
+            if (flaggedQuestions.size === 0) {
+                flaggedQuestionsList.innerHTML += '<span class="text-gray-400">Không có</span>';
+            } else {
+                const sortedFlags = Array.from(flaggedQuestions).sort((a, b) => a - b);
+                sortedFlags.forEach(qIndex => {
+                    const flagLink = document.createElement('button');
+                    flagLink.className = 'h-8 w-8 flex items-center justify-center bg-yellow-100 text-yellow-700 rounded-full font-bold hover:bg-yellow-200';
+                    flagLink.textContent = qIndex + 1;
+                    flagLink.onclick = () => showQuestion(qIndex);
+                    flaggedQuestionsList.appendChild(flagLink);
+                });
+            }
+        };
+
+        const handleSubmitQuiz = () => {
+            const unanswered = userAnswers.filter(a => a === null).length;
+            if (unanswered > 0) {
+                if (!confirm(`Em vẫn còn ${unanswered} câu chưa trả lời. Em có chắc muốn nộp bài không?`)) {
+                    return;
+                }
+            }
+            
+            quizScreen.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+            calculateAndShowResults();
+        };
+
+        const calculateAndShowResults = async () => {
+            let score = 0;
+            questions.forEach((q, i) => {
+                if (userAnswers[i] === q.answer) {
+                    score++;
+                }
+            });
+
+            const percentage = Math.round((score / questions.length) * 100);
+            
+            // Display basic results
+            resultStudentName.textContent = studentName;
+            scoreText.textContent = `${score}/${questions.length}`;
+            percentageText.textContent = `${percentage}%`;
+            
+            if (percentage === 100) {
+                finalComment.textContent = "Tuyệt vời! Em đã nắm chắc kiến thức như một chuyên gia!";
+            } else if (percentage >= 80) {
+                finalComment.textContent = "Làm tốt lắm! Chỉ một chút nữa là hoàn hảo rồi.";
+            } else if (percentage >= 50) {
+                finalComment.textContent = "Khá lắm! Cố gắng ôn lại một chút những phần chưa chắc nhé.";
+            } else {
+                finalComment.textContent = "Đừng nản lòng! Hành trình vạn dặm bắt đầu bằng một bước chân. Cùng xem lại bài nào!";
+            }
+
+            // Show colored feedback on quiz options
+            questions.forEach((q, qIndex) => {
+                const optionButtons = document.querySelectorAll(`#question-${qIndex} .option-btn`);
+                optionButtons.forEach((btn, oIndex) => {
+                    btn.disabled = true;
+                    if (oIndex === q.answer) {
+                        btn.classList.add('correct');
+                    } else if (userAnswers[qIndex] === oIndex) {
+                        btn.classList.add('incorrect');
+                    }
+                });
+            });
+
+            // Trigger AI analysis and data sending
+            try {
+                const analysisText = await getAIAnalysis();
+                displayAIAnalysis(analysisText);
+                sendDataToGoogleSheet({
+                    name: studentName,
+                    score: score,
+                    total: questions.length,
+                    timestamp: new Date().toLocaleString('vi-VN'),
+                    analysis: analysisText
+                });
+            } catch (error) {
+                console.error("Error during post-quiz processing:", error);
+                displayAIAnalysis("Rất tiếc, đã có lỗi xảy ra khi phân tích bài làm. Vui lòng thử lại sau.", true);
+            }
+        };
+
+        // AI and API Calls
+        const getAIAnalysis = async () => {
+            aiLoading.classList.remove('hidden');
+            aiResult.classList.add('hidden');
+
+            const prompt = buildAIPrompt();
+            
+            try {
+                const responseText = await callGeminiAPI(prompt);
+                return responseText;
+            } catch (error) {
+                console.error("Failed to get AI analysis:", error);
+                throw new Error("Không thể kết nối đến dịch vụ phân tích AI. Vui lòng thử lại sau.");
+            }
+        };
+
+        const callGeminiAPI = async (prompt) => {
+            // The apiKey is an empty string, and the environment will provide the necessary authentication.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    console.error("API Error Response:", errorBody);
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("Unexpected API response structure:", result);
+                    throw new Error("API returned no valid content.");
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                // Re-throw the error so the calling function can handle it
+                throw error;
+            }
+        };
+
+        const buildAIPrompt = () => {
+            let prompt = `
+                **Bối cảnh:**
+                - Vai trò của bạn: Bạn là Thầy Lâm, một chuyên gia về môn Vật Lý.
+                - Giới hạn chuyên môn: Bạn CHỈ được phân tích kết quả bài làm của học sinh lớp 12 về chủ đề "nội năng".
+                - Văn phong: Hãy đưa ra nhận xét chi tiết, chỉ tập trung vào các điểm làm tốt và các điểm cần cải thiện. Không cần thêm lời khuyên hay động viên.
+                - Định dạng đầu ra: Sử dụng Markdown. Bắt đầu với một tiêu đề "### Phân tích bài làm". Sau đó là hai phần: "#### Điểm làm tốt" và "#### Điểm cần cải thiện". Mỗi phần dùng gạch đầu dòng.
+
+                **Dữ liệu bài làm của học sinh:**
+            `;
+
+            questions.forEach((q, i) => {
+                const userAnswerText = userAnswers[i] !== null ? q.options[userAnswers[i]] : "Chưa trả lời";
+                const correctAnswerText = q.options[q.answer];
+                const isCorrect = userAnswers[i] === q.answer;
+
+                prompt += `
+                    ---
+                    **Câu ${i + 1}:** ${q.question}
+                    - **Em đã chọn:** ${userAnswerText}
+                    - **Đáp án đúng:** ${correctAnswerText}
+                    - **Kết quả:** ${isCorrect ? "Đúng" : "Sai"}
+                `;
+            });
+
+            return prompt;
+        };
+        
+        const displayAIAnalysis = (analysisText, isError = false) => {
+            aiLoading.classList.add('hidden');
+            aiResult.innerHTML = isError 
+                ? `<p class="text-red-600">${analysisText}</p>` 
+                : analysisText.replace(/\n/g, '<br>').replace(/#### (.*?)/g, '<strong>$1</strong>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            aiResult.classList.remove('hidden');
+        };
+
+        const sendDataToGoogleSheet = async (data) => {
+            try {
+                // The prompt asks for separate fields for strengths, weaknesses, etc.
+                // However, the AI prompt generates a single block of text.
+                // We will send the whole analysis text as one field.
+                const dataToSend = {
+                    name: data.name,
+                    score: data.score,
+                    total: data.total,
+                    timestamp: data.timestamp,
+                    'điểm mạnh': 'Xem phân tích chi tiết', // Placeholder
+                    'điểm yếu': 'Xem phân tích chi tiết', // Placeholder
+                    'điểm cần cải thiện': data.analysis // Send full text here
+                };
+
+                await fetch(googleScriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Important for sending to Apps Script web app
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dataToSend)
+                });
+                console.log("Data successfully sent to Google Sheet.");
+            } catch (error) {
+                console.error("Error sending data to Google Sheet:", error);
+            }
+        };
+
+        // --- START THE APP ---
+        init();
+    });
+    </script>
+</body>
+</html>
