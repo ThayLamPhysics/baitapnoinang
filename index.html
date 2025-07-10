@@ -375,9 +375,24 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // --- CONFIGURATION ---
-        // API key is handled by the environment for gemini-2.0-flash
-        const apiKey = ""; 
-        const googleScriptURL = 'https://script.google.com/macros/s/AKfycbx8ALfDVf1xedGX9Dv7HSMegojLGrlqqGbpoyk0QxKdilunSrFcySTci5q1M_b8ynRn/exec';
+        const apiKeys = [
+            "AIzaSyDXBkn0tzsUL22rLKfdRB7ZC7Vq4lOr6lI",
+            "AIzaSyCcCZaJGPK7zuG7oAfmTxpKJsUrA6d71qE",
+            "AIzaSyDEd3DlRfsAFrX_Np-_uCT0PB11Bnan8Wo",
+            "AIzaSyCwU5F9uPpFY0Kxs38_oVsq9xiGiVxLGn0",
+            "AIzaSyA-Hs56lbD-92VOaOznABZoNNbykZLOJwM",
+            "AIzaSyArMQbVeNvR_ndTvkZpk0QYehrOYSGe6R8",
+            "AIzaSyD0_pjAv_WhY4FZMcKWgZDJlVscJ3gVAsE",
+            "AIzaSyCmKP7_58G0SqHycgvud-obWC3TwczRBnA",
+            "AIzaSyBGfzYJ3LhAJ6pOX71MuKcONNaQ8ypyjF4",
+            "AIzaSyDknzIqGTzG1hkTDLjPjKJf8Ac98hsLovQ",
+            "AIzaSyBqrIS8mNMa15nutLR5ioAHU_GvxR3v1sUs",
+            "AIzaSyCXN7WuUw9vJX299tC8KHYYZhaSaK3nvN8",
+            "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",
+            "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",
+            "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"
+        ].map(key => key.trim());
+        const googleScriptURL = 'https://script.google.com/macros/s/AKfycbztWvCkMpPx1JULjoW-3WG8PuRzsmA8FhSE6QiiwrkQ79hk0kzCOVdpplRM070NkOufbQ/exec';
 
         const questions = [
             {
@@ -442,6 +457,7 @@
         let userAnswers = new Array(questions.length).fill(null);
         let flaggedQuestions = new Set();
         let currentQuestionIndex = 0;
+        let currentApiKeyIndex = 0;
 
         // --- DOM ELEMENTS ---
         const coverPage = document.getElementById('cover-page');
@@ -734,30 +750,32 @@
         const getAIAnalysis = async () => {
             aiLoading.classList.remove('hidden');
             aiResult.classList.add('hidden');
+            currentApiKeyIndex = 0; // Reset index for each new analysis
 
             const prompt = buildAIPrompt();
             
             try {
-                const responseText = await callGeminiAPI(prompt);
+                const responseText = await callGeminiAPIWithFailover(prompt);
                 return responseText;
             } catch (error) {
-                console.error("Failed to get AI analysis:", error);
-                throw new Error("Không thể kết nối đến dịch vụ phân tích AI. Vui lòng thử lại sau.");
+                console.error("All API keys failed:", error);
+                throw new Error("Không thể kết nối đến dịch vụ phân tích AI. Vui lòng kiểm tra lại API keys.");
             }
         };
 
-        const callGeminiAPI = async (prompt) => {
-            // The apiKey is an empty string, and the environment will provide the necessary authentication.
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const callGeminiAPIWithFailover = async (prompt) => {
+            if (currentApiKeyIndex >= apiKeys.length) {
+                throw new Error("All API keys have been tried and failed.");
+            }
+
+            const apiKey = apiKeys[currentApiKeyIndex];
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
             const payload = {
-                contents: [{
-                    role: "user",
-                    parts: [{ text: prompt }]
-                }]
+                contents: [{ parts: [{ text: prompt }] }]
             };
 
             try {
-                const response = await fetch(apiUrl, {
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -765,24 +783,24 @@
 
                 if (!response.ok) {
                     const errorBody = await response.text();
-                    console.error("API Error Response:", errorBody);
+                    console.error(`API Error for key index ${currentApiKeyIndex}:`, errorBody);
                     throw new Error(`API call failed with status: ${response.status}`);
                 }
 
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    return result.candidates[0].content.parts[0].text;
+                const data = await response.json();
+                if (data.candidates && data.candidates.length > 0 &&
+                    data.candidates[0].content && data.candidates[0].content.parts &&
+                    data.candidates[0].content.parts.length > 0) {
+                    return data.candidates[0].content.parts[0].text;
                 } else {
-                    console.error("Unexpected API response structure:", result);
-                    throw new Error("API returned no valid content.");
+                    console.error("Unexpected API response structure:", data);
+                    throw new Error("API returned no content.");
                 }
+
             } catch (error) {
-                console.error("Error calling Gemini API:", error);
-                // Re-throw the error so the calling function can handle it
-                throw error;
+                console.warn(`API key at index ${currentApiKeyIndex} failed. Trying next one.`);
+                currentApiKeyIndex++;
+                return callGeminiAPIWithFailover(prompt); // Recursive call for failover
             }
         };
 
@@ -824,9 +842,6 @@
 
         const sendDataToGoogleSheet = async (data) => {
             try {
-                // The prompt asks for separate fields for strengths, weaknesses, etc.
-                // However, the AI prompt generates a single block of text.
-                // We will send the whole analysis text as one field.
                 const dataToSend = {
                     name: data.name,
                     score: data.score,
